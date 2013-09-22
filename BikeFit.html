@@ -28,7 +28,7 @@
 
             // request the rgb image stream
             var plugin = document.getElementById("ZigPlugin");
-            plugin.requestStreams({updateDepth: false, updateImage: true, updateLabelMap: false});
+            plugin.requestStreams({updateDepth: true, updateImage: true, updateLabelMap: false});
 
             // every frame, draw the rgb image and skeleton
             plugin.addEventListener("NewFrame", function () {
@@ -42,6 +42,8 @@
                 canvas.height = window.innerHeight;
 
                 var realCtx = canvas.getContext('2d');
+
+
                 var widthScale = canvas.width / imageBuffer.width;
                 var newHeight = imageBuffer.height * widthScale;
                 var newWidth = canvas.width;
