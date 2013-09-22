@@ -1,0 +1,11 @@
+Bike fit using 3d sensor. TODO
+
+- requires ZigFu browser plugin: http://zigfu.com/
+-- if using Microsoft Kinect and OPENNI drivers do not work, try the Microsoft Kinect SDK
+
+The sort of thing we are going to try and measure:
+- http://bikedynamics.co.uk/guidelines.htm
+- http://www.bikefit.com/s-13-road-bikes.aspx
+
+
+
