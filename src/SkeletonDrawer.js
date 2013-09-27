@@ -50,7 +50,6 @@ SkeletonDrawer.prototype.draw = function (canvas, scale) {
         var pos = this.user.skeleton[i].position;
         var projective = toImageSpace(pos);
         ctx.fillRect(projective[0] - jointSize / 2, projective[1] - jointSize / 2, jointSize, jointSize);
-        ctx.lineTo(projective[0], projective[1]);
     }
 
     //connect joints
