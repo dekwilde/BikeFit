@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <title>Image Capture</title>
+    <script src='src/zig.js'></script>
+    <script src='src/Base64.js'></script>
+    <script src='src/ZigStreamDecoders.js'></script>
+
+
+    <script>
+        var captureKey = ' ';
+
+        var captureImage = false;
+
+        document.onkeyup = function(keyPress) {
+            var keyPressed = String.fromCharCode(keyPress.keyCode);
+            if (keyPressed == captureKey) {
+                captureImage = true;
+            }
+        };
+
+        function pluginLoaded() {
+
+            verifySensorAndPlugin();
+
+            // request the rgb image stream
+            var plugin = document.getElementById("ZigPlugin");
+            plugin.requestStreams({updateDepth: true, updateImage: true, updateLabelMap: false});
+
+            // every frame, draw the rgb image and skeleton
+            plugin.addEventListener("NewFrame", function () {
+
+                // get the rgb image from the sensor
+                var imageBuffer = imageToCanvas(plugin);
+
+                // get the depth image from the sensor
+                var depthBuffer = depthToCanvas(plugin);
+
+                var targetWidth = imageBuffer.width + depthBuffer.width;
+
+                // resize the canvas to the window size
+                var canvas = document.getElementById('canvas');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                var realCtx = canvas.getContext('2d');
+
+
+                var widthScale = canvas.width / targetWidth;
+                var newHeight = imageBuffer.height * widthScale;
+                var newWidth = canvas.width;
+
+                if (newHeight > canvas.height) {
+                    //calling based on width made it to tall, go by height
+                    var heightScale = canvas.height / imageBuffer.height;
+                    newWidth = targetWidth * heightScale;
+                    newHeight = canvas.height;
+                }
+
+                // scale the sensor image and draw it to the screen
+                realCtx.drawImage(imageBuffer, 0, 0, newWidth/2, newHeight);
+                realCtx.drawImage(depthBuffer, newWidth/2, 0, newWidth/2, newHeight);
+                if (captureImage) {
+                    console.log("downloading images");
+                    captureImage = false;
+
+                    var imageData = { imageMap : plugin.imageMap, depthMap : plugin.depthMap };
+
+                    saveContent(JSON.stringify(imageData), "imageCapture.data");
+                }
+            }, false);
+        }
+
+        function saveContent(fileContents, fileName) {
+            var link = document.createElement('a');
+            link.download = fileName;
+            link.href = 'data:,' + fileContents;
+            link.click();
+        }
+
+        function verifySensorAndPlugin() {
+            console.log("Sensor connected: " + zig.sensorConnected);
+            console.log("Browser plugin installed: " + zig.pluginInstalled);
+            console.log("Plugin version: " + zig.pluginVersion);
+            console.log("Zig.js version: " + zig.version);
+
+            if (!zig.pluginInstalled) {
+                alert('zigfu plugin not installed!');
+            }
+
+            if (!zig.sensorConnected) {
+                alert("no sensor found!")
+            }
+        }
+
+    </script>
+
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="pluginContainer">
+    <object id="ZigPlugin" type="application/x-zig" width="0" height="0">
+        <param name="onload" value="pluginLoaded"/>
+    </object>
+</div>
+</body>
+</html>
