@@ -1,40 +1,42 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/html">
 <head>
-    <title>Bike Fit</title>
+    <title>Image Capture</title>
     <script src='src/zig.js'></script>
     <script src='src/Base64.js'></script>
-    <script src='src/SkeletonDrawer.js'></script>
     <script src='src/ZigStreamDecoders.js'></script>
 
 
     <script>
+        var captureKey = ' ';
+
+        var captureImage = false;
+
+        document.onkeyup = function(keyPress) {
+            var keyPressed = String.fromCharCode(keyPress.keyCode);
+            if (keyPressed == captureKey) {
+                captureImage = true;
+            }
+        };
+
         function pluginLoaded() {
 
             verifySensorAndPlugin();
-            var skeleton = new SkeletonDrawer();
-
-            // listener for a single user with skeleton tracking
-            var engager = zig.EngageUsersWithSkeleton(1);
-            engager.addEventListener('userengaged', function (user) {
-                console.log('User engaged: ' + user.id);
-                skeleton.setUser(user);
-            });
-            engager.addEventListener('userdisengaged', function (user) {
-                console.log('User disengaged: ' + user.id);
-                skeleton.setUser(null);
-            });
-            zig.addListener(engager);
 
             // request the rgb image stream
             var plugin = document.getElementById("ZigPlugin");
-            plugin.requestStreams({updateDepth: true, updateImage: true, updateLabelMap: true});
+            plugin.requestStreams({updateDepth: true, updateImage: true, updateLabelMap: false});
 
             // every frame, draw the rgb image and skeleton
             plugin.addEventListener("NewFrame", function () {
 
                 // get the rgb image from the sensor
                 var imageBuffer = imageToCanvas(plugin);
+
+                // get the depth image from the sensor
+                var depthBuffer = depthToCanvas(plugin);
+
+                var targetWidth = imageBuffer.width + depthBuffer.width;
 
                 // resize the canvas to the window size
                 var canvas = document.getElementById('canvas');
@@ -44,24 +46,36 @@
                 var realCtx = canvas.getContext('2d');
 
 
-                var widthScale = canvas.width / imageBuffer.width;
+                var widthScale = canvas.width / targetWidth;
                 var newHeight = imageBuffer.height * widthScale;
                 var newWidth = canvas.width;
-                var scale = widthScale;
 
                 if (newHeight > canvas.height) {
                     //calling based on width made it to tall, go by height
                     var heightScale = canvas.height / imageBuffer.height;
-                    newWidth = imageBuffer.width * heightScale;
+                    newWidth = targetWidth * heightScale;
                     newHeight = canvas.height;
-                    scale = heightScale;
                 }
 
                 // scale the sensor image and draw it to the screen
-                realCtx.drawImage(imageBuffer, 0, 0, newWidth, newHeight);
-                // scale and draw the skeleton
-                skeleton.draw(canvas, scale);
+                realCtx.drawImage(imageBuffer, 0, 0, newWidth/2, newHeight);
+                realCtx.drawImage(depthBuffer, newWidth/2, 0, newWidth/2, newHeight);
+                if (captureImage) {
+                    console.log("downloading images");
+                    captureImage = false;
+
+                    var imageData = { imageMap : plugin.imageMap, depthMap : plugin.depthMap };
+
+                    saveContent(JSON.stringify(imageData), "imageCapture.data");
+                }
             }, false);
+        }
+
+        function saveContent(fileContents, fileName) {
+            var link = document.createElement('a');
+            link.download = fileName;
+            link.href = 'data:,' + fileContents;
+            link.click();
         }
 
         function verifySensorAndPlugin() {

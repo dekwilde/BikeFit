@@ -28,7 +28,7 @@
 
             // request the rgb image stream
             var plugin = document.getElementById("ZigPlugin");
-            plugin.requestStreams({updateDepth: true, updateImage: true, updateLabelMap: true});
+            plugin.requestStreams({updateDepth: true, updateImage: true, updateLabelMap: false});
 
             // every frame, draw the rgb image and skeleton
             plugin.addEventListener("NewFrame", function () {
